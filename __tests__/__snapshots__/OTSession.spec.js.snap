@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OTSession no props missing credentials should render an empty view 1`] = `
+<OTSession
+  eventHandlers={Object {}}
+  options={Object {}}
+  signal={Object {}}
+  style={
+    Object {
+      "flex": 1,
+    }
+  }
+>
+  <View>
+    <View />
+  </View>
+</OTSession>
+`;
+
+exports[`OTSession with props with children should have two children 1`] = `
+<View
+  style={
+    Object {
+      "flex": 1,
+    }
+  }
+>
+  <Text />
+  <Text />
+</View>
+`;
