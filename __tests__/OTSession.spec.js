@@ -1,6 +1,6 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
-import { mount } from 'enzyme';
+import { mount, shallow } from 'enzyme';
 import toJson from 'enzyme-to-json';
 import { Text } from 'react-native';
 
@@ -47,16 +47,25 @@ describe('OTSession', () => {
   });
 
   describe('with props', () => {
-    describe('with children', () => {
-      it('should have two children', () => {
-        const sessionComponent = renderer.create(
-          <OTSession apiKey={apiKey} sessionId={sessionId} token={token}>
-            <Text />
-            <Text />
-          </OTSession>
-        ).toJSON();
-        expect(sessionComponent).toMatchSnapshot();
-      });
+    it('should have two children', () => {
+      const sessionComponent = renderer.create(
+        <OTSession apiKey={apiKey} sessionId={sessionId} token={token}>
+          <Text />
+          <Text />
+        </OTSession>
+      ).toJSON();
+
+      expect(sessionComponent).toMatchSnapshot();
+    });
+
+    it('should call createSession when component mounts', () => {
+      const sessionComponent = shallow(<OTSession apiKey={apiKey} sessionId={sessionId} token={token} />);
+      const instance = sessionComponent.instance();
+      jest.spyOn(instance, 'createSession');
+      instance.componentDidMount();
+      
+      expect(instance.createSession).toHaveBeenCalled();
+      expect(instance.createSession).toHaveBeenCalledTimes(1);
     });
   });
 });
