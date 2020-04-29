@@ -18,14 +18,40 @@ exports[`OTSession no props missing credentials should render an empty view 1`] 
 `;
 
 exports[`OTSession with props should have two children 1`] = `
-<View
+<OTSession
+  apiKey="fakeApiKey"
+  eventHandlers={Object {}}
+  options={Object {}}
+  sessionId="fakeSessionId"
+  signal={Object {}}
   style={
     Object {
       "flex": 1,
     }
   }
+  token="fakeToken"
 >
-  <Text />
-  <Text />
-</View>
+  <View
+    style={
+      Object {
+        "flex": 1,
+      }
+    }
+  >
+    <View
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
+    >
+      <Text>
+        <Text />
+      </Text>
+      <Text>
+        <Text />
+      </Text>
+    </View>
+  </View>
+</OTSession>
 `;

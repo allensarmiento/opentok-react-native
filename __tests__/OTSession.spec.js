@@ -1,10 +1,10 @@
 import React from 'react';
-import renderer from 'react-test-renderer';
-import { mount, shallow } from 'enzyme';
+import { mount } from 'enzyme';
 import toJson from 'enzyme-to-json';
 import { Text } from 'react-native';
 
 import OTSession from '../src/OTSession';
+import { OT } from '../src/OT';
 
 jest.mock('../src/OT', () => ({
   OT: {
@@ -25,18 +25,19 @@ describe('OTSession', () => {
   });
 
   describe('no props', () => {
-    describe('missing credentials', () => {
-      let component;
-      console.error = jest.fn();
-      console.log = jest.fn();
+    let sessionComponent;
+    console.error = jest.fn();
+    console.log = jest.fn();
 
-      beforeEach(() => {
-        console.error.mockClear();
-        component = mount(<OTSession />);
-      });
+    beforeEach(() => {
+      console.error.mockClear();
+      sessionComponent = mount(<OTSession />);
+    });
+
+    describe('missing credentials', () => {
 
       it('should render an empty view', () => {
-        expect(toJson(component)).toMatchSnapshot();
+        expect(toJson(sessionComponent)).toMatchSnapshot();
       });
 
       it('should call console error', () => {
@@ -47,24 +48,30 @@ describe('OTSession', () => {
   });
 
   describe('with props', () => {
-    it('should have two children', () => {
-      const sessionComponent = renderer.create(
+    let sessionComponent;
+
+    beforeEach(() => {
+      sessionComponent = mount(
         <OTSession apiKey={apiKey} sessionId={sessionId} token={token}>
           <Text />
           <Text />
         </OTSession>
-      ).toJSON();
+      );
+    });
 
-      expect(sessionComponent).toMatchSnapshot();
+    it('should have two children', () => {
+      expect(toJson(sessionComponent)).toMatchSnapshot();
+    });
+
+    it('should call OT.initSession', () => {
+      expect(OT.initSession).toHaveBeenCalled();
     });
 
     it('should call createSession when component mounts', () => {
-      const sessionComponent = shallow(<OTSession apiKey={apiKey} sessionId={sessionId} token={token} />);
       const instance = sessionComponent.instance();
       jest.spyOn(instance, 'createSession');
       instance.componentDidMount();
       
-      expect(instance.createSession).toHaveBeenCalled();
       expect(instance.createSession).toHaveBeenCalledTimes(1);
     });
   });
