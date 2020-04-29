@@ -47,7 +47,7 @@ describe('OTSession', () => {
     });
   });
 
-  describe('with props', () => {
+  describe('with props and children', () => {
     let sessionComponent;
 
     beforeEach(() => {
@@ -73,6 +73,14 @@ describe('OTSession', () => {
       instance.componentDidMount();
       
       expect(instance.createSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call disconnectSession when component unmounts', () => {
+      const instance = sessionComponent.instance();
+      jest.spyOn(instance, 'disconnectSession');
+      sessionComponent.unmount();
+
+      expect(instance.disconnectSession).toHaveBeenCalled();
     });
   });
 });

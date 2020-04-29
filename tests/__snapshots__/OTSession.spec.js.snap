@@ -17,7 +17,7 @@ exports[`OTSession no props missing credentials should render an empty view 1`] 
 </OTSession>
 `;
 
-exports[`OTSession with props should have two children 1`] = `
+exports[`OTSession with props and children should have two children 1`] = `
 <OTSession
   apiKey="fakeApiKey"
   eventHandlers={Object {}}
