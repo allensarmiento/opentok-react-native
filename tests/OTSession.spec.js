@@ -5,6 +5,7 @@ import { Text } from 'react-native';
 
 import OTSession from '../src/OTSession';
 import { OT } from '../src/OT';
+import { logOT } from '../src/helpers/OTHelper';
 
 jest.mock('../src/OT', () => ({
   OT: {
@@ -13,6 +14,14 @@ jest.mock('../src/OT', () => ({
     connect: jest.fn()
   },
   setNativeEvents: jest.fn()
+}));
+
+jest.mock('../src/helpers/OTHelper', () => ({
+  logOT: jest.fn(),
+  getLog: jest.fn(),
+  logRequest: jest.fn(),
+  getOtrnErrorEventHandler: jest.fn(),
+  reassignEvents: jest.fn()
 }));
 
 describe('OTSession', () => {
@@ -49,6 +58,7 @@ describe('OTSession', () => {
 
   describe('with props and children', () => {
     let sessionComponent;
+    let instance;
 
     beforeEach(() => {
       sessionComponent = mount(
@@ -57,30 +67,46 @@ describe('OTSession', () => {
           <Text />
         </OTSession>
       );
+
+      instance = sessionComponent.instance();
     });
 
     it('should have two children', () => {
       expect(toJson(sessionComponent)).toMatchSnapshot();
     });
 
-    it('should call OT.initSession', () => {
-      expect(OT.initSession).toHaveBeenCalled();
+    describe('when component mounts', () => {
+      beforeEach(() => {
+        jest.spyOn(instance, 'createSession');
+        instance.componentDidMount();
+      });
+
+      it('should call createSession', () => {
+        expect(instance.createSession).toHaveBeenCalledTimes(1);
+      });
+
+      it('should call OT.initSession', () => {
+        expect(OT.initSession).toHaveBeenCalled();
+      });
+
+      it('should call OT.connect', () => {
+        expect(OT.connect).toHaveBeenCalled();
+      });
+
+      it('should call logOT', () => {
+        expect(logOT).toHaveBeenCalled();
+      });
     });
 
-    it('should call createSession when component mounts', () => {
-      const instance = sessionComponent.instance();
-      jest.spyOn(instance, 'createSession');
-      instance.componentDidMount();
-      
-      expect(instance.createSession).toHaveBeenCalledTimes(1);
-    });
+    describe('when component unmounts', () => {
+      beforeEach(() => {
+        jest.spyOn(instance, 'disconnectSession');
+        sessionComponent.unmount();
+      });
 
-    it('should call disconnectSession when component unmounts', () => {
-      const instance = sessionComponent.instance();
-      jest.spyOn(instance, 'disconnectSession');
-      sessionComponent.unmount();
-
-      expect(instance.disconnectSession).toHaveBeenCalled();
+      it('should call disconnectSession', () => {
+        expect(instance.disconnectSession).toHaveBeenCalled();
+      });
     });
   });
 });
