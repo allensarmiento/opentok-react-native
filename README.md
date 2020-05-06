@@ -125,3 +125,15 @@ To see this library in action, check out the [opentok-react-native-samples](http
 ## Contributing
 
 If you make changes to the project that you would like to contribute back then please follow the [contributing guidelines](CONTRIBUTING.md). All contributions are greatly appreciated!
+
+## Tests
+Run the tests locally with the following command:
+```
+npm test
+```
+
+To rebuild snapshots, run:
+```
+npm test -- -u
+```
+
