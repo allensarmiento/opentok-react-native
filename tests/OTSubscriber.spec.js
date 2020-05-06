@@ -4,7 +4,7 @@ import renderer from 'react-test-renderer';
 import OTSubscriber from '../src/OTSubscriber';
 
 jest.mock('../src/OT', () => ({
-
+  nativeEvents: jest.fn()
 }));
 
 describe('OTSubscriber', () => {
