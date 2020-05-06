@@ -14,10 +14,6 @@ jest.mock('../src/OT', () => ({
   setNativeEvents: jest.fn() 
 }));
 
-// The publisher component will be rendering an empty View,
-// so just ignore the warning.
-console.error = jest.fn();
-
 describe('OTPublisher', () => {
   describe('no props', () => {
     it('should render an empty view', () => {
@@ -32,13 +28,18 @@ describe('OTPublisher', () => {
     let publisherComponent;
     let instance;
 
+    // There will be warning messages because jest/enzyme will render
+    // the publisher component as a <View />, but the actual render 
+    // should be a native component. This statement ignores the console
+    // error messages.
+    console.error = jest.fn();
+
     beforeEach(() => {
       publisherComponent = mount(
         <OTPublisher publisher={publisher} publisherId={publisherId} />
       );
 
       instance = publisherComponent.instance();
-
     });
 
     describe('when component mounts', () => {
