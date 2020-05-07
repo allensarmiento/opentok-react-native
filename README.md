@@ -129,6 +129,18 @@ Newer versions of Android–`API Level 23` (Android 6.0)–have a different perm
 
 To see this library in action, check out the [opentok-react-native-samples](https://github.com/opentok/opentok-react-native-samples) repo.
 
+## Tests
+
+Run the tests locally with the following command:
+```
+npm test
+```
+
+To rebuild snapshots, run:
+```
+npm test -- -u
+```
+
 ## Development and Contributing
 
 Interested in contributing? We :heart: pull requests! See the
@@ -137,7 +149,6 @@ Interested in contributing? We :heart: pull requests! See the
 ## Getting Help
 
 We love to hear from you so if you have questions, comments or find a bug in the project, let us know! You can either:
-
 - Open an issue on this repository
 - See <https://support.tokbox.com/> for support options
 - Tweet at us! We're [@VonageDev](https://twitter.com/VonageDev) on Twitter
