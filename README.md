@@ -131,6 +131,11 @@ To see this library in action, check out the [opentok-react-native-samples](http
 
 ## Tests
 
+Before running tests, make sure to install dependencies first:
+```
+npm install
+```
+
 Run the tests locally with the following command:
 ```
 npm test
