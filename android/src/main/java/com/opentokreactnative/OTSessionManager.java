@@ -29,6 +29,8 @@ import com.opentok.android.Stream;
 import com.opentok.android.OpentokError;
 import com.opentok.android.Subscriber;
 import com.opentok.android.SubscriberKit;
+
+import com.opentokreactnative.builders.SessionBuilder;
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils;
 
@@ -63,48 +65,20 @@ public class OTSessionManager extends ReactContextBaseJavaModule
     public OTRN sharedState;
 
     public OTSessionManager(ReactApplicationContext reactContext) {
-
         super(reactContext);
         sharedState = OTRN.getSharedState();
     }
 
     @ReactMethod
     public void initSession(String apiKey, String sessionId, ReadableMap sessionOptions) {
-
-        final boolean useTextureViews = sessionOptions.getBoolean("useTextureViews");
-        final boolean isCamera2Capable = sessionOptions.getBoolean("isCamera2Capable");
-        final boolean connectionEventsSuppressed = sessionOptions.getBoolean("connectionEventsSuppressed");
-        final boolean ipWhitelist = sessionOptions.getBoolean("ipWhitelist");
-        // Note: IceConfig is an additional property not supported at the moment. 
-        // final ReadableMap iceConfig = sessionOptions.getMap("iceConfig");
-        // final List<Session.Builder.IceServer> iceConfigServerList = (List<Session.Builder.IceServer>) iceConfig.getArray("customServers");
-        // final Session.Builder.IncludeServers iceConfigServerConfig; // = iceConfig.getString("includeServers");
-        final String proxyUrl = sessionOptions.getString("proxyUrl");
         String androidOnTop = sessionOptions.getString("androidOnTop");
         String androidZOrder = sessionOptions.getString("androidZOrder");
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         ConcurrentHashMap<String, String> mAndroidOnTopMap = sharedState.getAndroidOnTopMap();
         ConcurrentHashMap<String, String> mAndroidZOrderMap = sharedState.getAndroidZOrderMap();
 
+        Session mSession = SessionBuilder.buildSession(this.getReactApplicationContext(), apiKey, sessionId, sessionOptions);
 
-        Session mSession = new Session.Builder(this.getReactApplicationContext(), apiKey, sessionId)
-                .sessionOptions(new Session.SessionOptions() {
-                    @Override
-                    public boolean useTextureViews() {
-                        return useTextureViews;
-                    }
-
-                    @Override
-                    public boolean isCamera2Capable() {
-                        return isCamera2Capable;
-                    }
-                })
-                .connectionEventsSuppressed(connectionEventsSuppressed)
-                // Note: setCustomIceServers is an additional property not supported at the moment. 
-                // .setCustomIceServers(serverList, config)
-                .setIpWhitelist(ipWhitelist)
-                .setProxyUrl(proxyUrl)
-                .build();
         mSession.setSessionListener(this);
         mSession.setSignalListener(this);
         mSession.setConnectionListener(this);
