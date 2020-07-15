@@ -31,6 +31,7 @@ import com.opentok.android.Subscriber;
 import com.opentok.android.SubscriberKit;
 
 import com.opentokreactnative.builders.SessionBuilder;
+import com.opentokreactnative.builders.PublisherBuilder;
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils;
 
@@ -106,41 +107,20 @@ public class OTSessionManager extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void initPublisher(String publisherId, ReadableMap properties, Callback callback) {
-
-        String name = properties.getString("name");
-        Boolean videoTrack = properties.getBoolean("videoTrack");
-        Boolean audioTrack = properties.getBoolean("audioTrack");
         String cameraPosition = properties.getString("cameraPosition");
         Boolean audioFallbackEnabled = properties.getBoolean("audioFallbackEnabled");
-        int audioBitrate = properties.getInt("audioBitrate");
-        String frameRate = "FPS_" + properties.getInt("frameRate");
-        String resolution = properties.getString("resolution");
         Boolean publishAudio = properties.getBoolean("publishAudio");
         Boolean publishVideo = properties.getBoolean("publishVideo");
         String videoSource = properties.getString("videoSource");
+
         Publisher mPublisher = null;
         if (videoSource.equals("screen")) {
             View view = getCurrentActivity().getWindow().getDecorView().getRootView();
             OTScreenCapturer capturer = new OTScreenCapturer(view);
-            mPublisher = new Publisher.Builder(this.getReactApplicationContext())
-                    .audioTrack(audioTrack)
-                    .videoTrack(videoTrack)
-                    .name(name)
-                    .audioBitrate(audioBitrate)
-                    .resolution(Publisher.CameraCaptureResolution.valueOf(resolution))
-                    .frameRate(Publisher.CameraCaptureFrameRate.valueOf(frameRate))
-                    .capturer(capturer)
-                    .build();
+            mPublisher = PublisherBuilder.buildPublisher(this.getReactApplicationContext(), properties, capturer);
             mPublisher.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeScreen);
         } else {
-            mPublisher = new Publisher.Builder(this.getReactApplicationContext())
-                    .audioTrack(audioTrack)
-                    .videoTrack(videoTrack)
-                    .name(name)
-                    .audioBitrate(audioBitrate)
-                    .resolution(Publisher.CameraCaptureResolution.valueOf(resolution))
-                    .frameRate(Publisher.CameraCaptureFrameRate.valueOf(frameRate))
-                    .build();
+            mPublisher = PublisherBuilder.buildPublisher(this.getReactApplicationContext(), properties);
             if (cameraPosition.equals("back")) {
                 mPublisher.cycleCamera();
             }
