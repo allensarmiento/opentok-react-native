@@ -70,33 +70,60 @@ public class OTSessionManager extends ReactContextBaseJavaModule
         sharedState = OTRN.getSharedState();
     }
 
+    /**
+     * Creates a new session, sets listeners, and adds the session and extra 
+     * details to the shared state.
+     * 
+     * @param apiKey
+     * @param sessionId
+     * @param sessionOptions
+     */
     @ReactMethod
     public void initSession(String apiKey, String sessionId, ReadableMap sessionOptions) {
-        String androidOnTop = sessionOptions.getString("androidOnTop");
-        String androidZOrder = sessionOptions.getString("androidZOrder");
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        ConcurrentHashMap<String, String> mAndroidOnTopMap = sharedState.getAndroidOnTopMap();
-        ConcurrentHashMap<String, String> mAndroidZOrderMap = sharedState.getAndroidZOrderMap();
-
+        // Build the new OT session
         Session mSession = SessionBuilder.buildSession(this.getReactApplicationContext(), apiKey, sessionId, sessionOptions);
 
+        // Set session listeners
         mSession.setSessionListener(this);
         mSession.setSignalListener(this);
         mSession.setConnectionListener(this);
         mSession.setReconnectionListener(this);
         mSession.setArchiveListener(this);
         mSession.setStreamPropertiesListener(this);
+
+        // Add the new session to the sessions state
+        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         mSessions.put(sessionId, mSession);
+
+        // Add the new session to the androidOnTopMap state
+        ConcurrentHashMap<String, String> mAndroidOnTopMap = sharedState.getAndroidOnTopMap();
+        String androidOnTop = sessionOptions.getString("androidOnTop");
         mAndroidOnTopMap.put(sessionId, androidOnTop);
+
+        // Add the new session to the androidZOrderMap state
+        ConcurrentHashMap<String, String> mAndroidZOrderMap = sharedState.getAndroidZOrderMap();
+        String androidZOrder = sessionOptions.getString("androidZOrder");
         mAndroidZOrderMap.put(sessionId, androidZOrder);
     }
 
+    /**
+     * Attempt to connect to the session using the token. 
+     * 
+     * @param sessionId
+     * @param token
+     * @param callback
+     */
     @ReactMethod
     public void connect(String sessionId, String token, Callback callback) {
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+        // Connect the sessionId to the session
         ConcurrentHashMap<String, Callback> mSessionConnectCallbacks = sharedState.getSessionConnectCallbacks();
         mSessionConnectCallbacks.put(sessionId, callback);
+
+        // Get the session from the sessions state
+        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
+
+        // Attempt to connect to the session with the token
         if (mSession != null) {
             mSession.connect(token);
         } else {
@@ -105,43 +132,77 @@ public class OTSessionManager extends ReactContextBaseJavaModule
         }
     }
 
+    /**
+     * Builds the publisher object, sets listeners and add the new publisher to the state
+     * 
+     * @param publisherId
+     * @param properties
+     * @param callback
+     */
     @ReactMethod
     public void initPublisher(String publisherId, ReadableMap properties, Callback callback) {
-        String cameraPosition = properties.getString("cameraPosition");
-        Boolean audioFallbackEnabled = properties.getBoolean("audioFallbackEnabled");
-        Boolean publishAudio = properties.getBoolean("publishAudio");
-        Boolean publishVideo = properties.getBoolean("publishVideo");
+        // Publisher object that will be created
+        Publisher mPublisher = null;
+
         String videoSource = properties.getString("videoSource");
 
-        Publisher mPublisher = null;
+        // Build the publisher depending on the video source
         if (videoSource.equals("screen")) {
             View view = getCurrentActivity().getWindow().getDecorView().getRootView();
             OTScreenCapturer capturer = new OTScreenCapturer(view);
+
             mPublisher = PublisherBuilder.buildPublisher(this.getReactApplicationContext(), properties, capturer);
             mPublisher.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeScreen);
         } else {
             mPublisher = PublisherBuilder.buildPublisher(this.getReactApplicationContext(), properties);
+
+            String cameraPosition = properties.getString("cameraPosition");
             if (cameraPosition.equals("back")) {
                 mPublisher.cycleCamera();
             }
         }
+
+        // Set publisher listeners
         mPublisher.setPublisherListener(this);
         mPublisher.setAudioLevelListener(this);
+
+        // Set publisher properties
+        Boolean audioFallbackEnabled = properties.getBoolean("audioFallbackEnabled");
         mPublisher.setAudioFallbackEnabled(audioFallbackEnabled);
+
+        Boolean publishVideo = properties.getBoolean("publishVideo");
         mPublisher.setPublishVideo(publishVideo);
+
+        Boolean publishAudio = properties.getBoolean("publishAudio");
         mPublisher.setPublishAudio(publishAudio);
+
+        // Add the publisher to the state
         ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
         mPublishers.put(publisherId, mPublisher);
+
         callback.invoke();
     }
 
+    /**
+     * Attempt to publish to the session.
+     * 
+     * @param sessionId
+     * @param publisherId
+     * @param callback
+     */
     @ReactMethod
     public void publish(String sessionId, String publisherId, Callback callback) {
+        // Get the session using the sessionId
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
+
+        // Attempt to publish to the session
         if (mSession != null) {
+            // Get the publisher from using the publisherId
             ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
             Publisher mPublisher = mPublishers.get(publisherId);
+
+            // Attempt to publish to the session
             if (mPublisher != null) {
                 mSession.publish(mPublisher);
                 callback.invoke();
@@ -155,24 +216,44 @@ public class OTSessionManager extends ReactContextBaseJavaModule
         }
     }
 
+    /**
+     * Create a new subscriber, set listeners and attempt to subscribe to the seession.
+     * 
+     * @param streamId
+     * @param sessionId
+     * @param properties
+     * @param callback
+     */
     @ReactMethod
     public void subscribeToStream(String streamId, String sessionId, ReadableMap properties, Callback callback) {
-
+        // Get the current stream using the streamId
         ConcurrentHashMap<String, Stream> mSubscriberStreams = sharedState.getSubscriberStreams();
-        ConcurrentHashMap<String, Subscriber> mSubscribers = sharedState.getSubscribers();
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Stream stream = mSubscriberStreams.get(streamId);
+
+        // Get the session using the sessionId
+        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
+
+        // Build the new subscriber
         Subscriber mSubscriber = new Subscriber.Builder(getReactApplicationContext(), stream).build();
+
+        // Set subscriber listeners
         mSubscriber.setSubscriberListener(this);
         mSubscriber.setAudioLevelListener(this);
         mSubscriber.setAudioStatsListener(this);
         mSubscriber.setVideoStatsListener(this);
         mSubscriber.setVideoListener(this);
         mSubscriber.setStreamListener(this);
+
+        // Set properties to subscribe to
         mSubscriber.setSubscribeToAudio(properties.getBoolean("subscribeToAudio"));
         mSubscriber.setSubscribeToVideo(properties.getBoolean("subscribeToVideo"));
+
+        // Add the new subscriber to the subscribers state
+        ConcurrentHashMap<String, Subscriber> mSubscribers = sharedState.getSubscribers();
         mSubscribers.put(streamId, mSubscriber);
+        
+        // Attempt to subscribe to the session
         if (mSession != null) {
             mSession.subscribe(mSubscriber);
             callback.invoke(null, streamId);
@@ -182,26 +263,40 @@ public class OTSessionManager extends ReactContextBaseJavaModule
         }
     }
 
+    /**
+     * Remove the streams and view containers of the subscriber. 
+     * 
+     * @param streamId
+     * @param callback
+     */
     @ReactMethod
     public void removeSubscriber(final String streamId, final Callback callback) {
-
         UiThreadUtil.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-
-                String mStreamId = streamId;
-                Callback mCallback = callback;
+                // Find the subscriber using the streamId
                 ConcurrentHashMap<String, Subscriber> mSubscribers = sharedState.getSubscribers();
-                ConcurrentHashMap<String, Stream> mSubscriberStreams = sharedState.getSubscriberStreams();
-                ConcurrentHashMap<String, FrameLayout> mSubscriberViewContainers = sharedState.getSubscriberViewContainers();
+                String mStreamId = streamId;
                 Subscriber mSubscriber = mSubscribers.get(mStreamId);
+
+                // Find the subscriber's stream view containers
+                ConcurrentHashMap<String, FrameLayout> mSubscriberViewContainers = sharedState.getSubscriberViewContainers();
                 FrameLayout mSubscriberViewContainer = mSubscriberViewContainers.get(mStreamId);
+
+                // Remove all stream views
                 if (mSubscriberViewContainer != null) {
                     mSubscriberViewContainer.removeAllViews();
                 }
+
+                // Remove the stream from the subscribers state 
                 mSubscriberViewContainers.remove(mStreamId);
                 mSubscribers.remove(mStreamId);
+
+                // Remove the stream from the subscribers stream state
+                ConcurrentHashMap<String, Stream> mSubscriberStreams = sharedState.getSubscriberStreams();
                 mSubscriberStreams.remove(mStreamId);
+
+                Callback mCallback = callback;
                 mCallback.invoke();
 
             }
@@ -210,10 +305,13 @@ public class OTSessionManager extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void disconnectSession(String sessionId, Callback callback) {
+        // TODO
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        ConcurrentHashMap<String, Callback> mSessionDisconnectCallbacks = sharedState.getSessionDisconnectCallbacks();
         Session mSession = mSessions.get(sessionId);
+
+        ConcurrentHashMap<String, Callback> mSessionDisconnectCallbacks = sharedState.getSessionDisconnectCallbacks();
         mSessionDisconnectCallbacks.put(sessionId, callback);
+
         if (mSession != null) {
             mSession.disconnect();
         }
