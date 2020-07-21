@@ -303,9 +303,14 @@ public class OTSessionManager extends ReactContextBaseJavaModule
         });
     }
 
+    /**
+     * Disconnects the sessionId from the session and updates the sessionDisconnectCallbacks
+     * 
+     * @param sessionId
+     * @param callback
+     */
     @ReactMethod
     public void disconnectSession(String sessionId, Callback callback) {
-        // TODO
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
 
@@ -317,98 +322,160 @@ public class OTSessionManager extends ReactContextBaseJavaModule
         }
     }
 
+    /**
+     * Publishes the audio for a publisher
+     * 
+     * @param publisherId
+     * @param publishAudio
+     */
     @ReactMethod
     public void publishAudio(String publisherId, Boolean publishAudio) {
-
         ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
         Publisher mPublisher = mPublishers.get(publisherId);
+
         if (mPublisher != null) {
             mPublisher.setPublishAudio(publishAudio);
         }
     }
 
+    /**
+     * Publishes the video for a publisher
+     * 
+     * @param publisherId
+     * @param publishVideo
+     */
     @ReactMethod
     public void publishVideo(String publisherId, Boolean publishVideo) {
-
         ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
         Publisher mPublisher = mPublishers.get(publisherId);
+
         if (mPublisher != null) {
             mPublisher.setPublishVideo(publishVideo);
         }
     }
 
+    /**
+     * Subscribes to the audio for a stream
+     * 
+     * @param streamId
+     * @param subscribeToAudio
+     */
     @ReactMethod
     public void subscribeToAudio(String streamId, Boolean subscribeToAudio) {
-
         ConcurrentHashMap<String, Subscriber> mSubscribers = sharedState.getSubscribers();
         Subscriber mSubscriber = mSubscribers.get(streamId);
+
         if (mSubscriber != null) {
             mSubscriber.setSubscribeToAudio(subscribeToAudio);
         }
     }
 
+    /**
+     * Subscribes to the video for a stream
+     * 
+     * @param streamId
+     * @param subscribeToVideo
+     */
     @ReactMethod
     public void subscribeToVideo(String streamId, Boolean subscribeToVideo) {
-
         ConcurrentHashMap<String, Subscriber> mSubscribers = sharedState.getSubscribers();
         Subscriber mSubscriber = mSubscribers.get(streamId);
+
         if (mSubscriber != null) {
             mSubscriber.setSubscribeToVideo(subscribeToVideo);
         }
     }
 
+    /**
+     * Change the camera view for a publisher
+     * 
+     * @param publisherId
+     * @param cameraPosition
+     */
     @ReactMethod
     public void changeCameraPosition(String publisherId, String cameraPosition) {
-
         ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
         Publisher mPublisher = mPublishers.get(publisherId);
+
         if (mPublisher != null) {
             mPublisher.cycleCamera();
         }
     }
 
+    /**
+     * Update the jsEvents of OTSessionManager
+     * 
+     * @param events
+     */
     @ReactMethod
     public void setNativeEvents(ReadableArray events) {
-
         for (int i = 0; i < events.size(); i++) {
-            jsEvents.add(events.getString(i));
+            this.jsEvents.add(events.getString(i));
         }
     }
 
+    /**
+     * Remove jsEvents of OTSessionManager
+     * 
+     * @param events
+     */
     @ReactMethod
     public void removeNativeEvents(ReadableArray events) {
-
         for (int i = 0; i < events.size(); i++) {
-            jsEvents.remove(events.getString(i));
+            this.jsEvents.remove(events.getString(i));
         }
     }
 
+    /**
+     * Set componentEvents of OTSessionManager
+     * 
+     * @param events
+     */
     @ReactMethod
     public void setJSComponentEvents(ReadableArray events) {
-
         for (int i = 0; i < events.size(); i++) {
-            componentEvents.add(events.getString(i));
+            this.componentEvents.add(events.getString(i));
         }
     }
 
+    /**
+     * Remove componentEvents of OTSessionManager
+     * 
+     * @param events
+     */
     @ReactMethod
     public void removeJSComponentEvents(ReadableArray events) {
-
         for (int i = 0; i < events.size(); i++) {
-            componentEvents.remove(events.getString(i));
+            this.componentEvents.remove(events.getString(i));
         }
     }
 
+    /**
+     * Attempt to send a signal if there is a valid session and/or connection
+     * 
+     * @param sessionId
+     * @param signal
+     * @param callback
+     */
     @ReactMethod
     public void sendSignal(String sessionId, ReadableMap signal, Callback callback) {
+        // Get the session of the sessionId
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
         Session mSession = mSessions.get(sessionId);
-        ConcurrentHashMap<String, Connection> mConnections = sharedState.getConnections();
+
+        // Get the connectionId
         String connectionId = signal.getString("to");
+
         Connection mConnection = null;
+
+        // Get the connection
         if (connectionId != null) {
+            ConcurrentHashMap<String, Connection> mConnections = sharedState.getConnections();
             mConnection = mConnections.get(connectionId);
         }
+
+        // If a valid connection and session, send a signal with the connection.
+        // If just a valid session, send a signal.
         if (mConnection != null && mSession != null) {
             mSession.sendSignal(signal.getString("type"), signal.getString("data"), mConnection);
             callback.invoke();
@@ -419,43 +486,61 @@ public class OTSessionManager extends ReactContextBaseJavaModule
             WritableMap errorInfo = EventUtils.createError("There was an error sending the signal. The native session instance could not be found.");
             callback.invoke(errorInfo);
         }
-
     }
 
+    /**
+     * Remove publisher properties from the session
+     * 
+     * @param publisherId
+     * @param callback
+     */
     @ReactMethod
     public void destroyPublisher(final String publisherId, final Callback callback) {
-
         UiThreadUtil.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-
-                ConcurrentHashMap<String, Callback> mPublisherDestroyedCallbacks = sharedState.getPublisherDestroyedCallbacks();
-                ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
-                ConcurrentHashMap<String, FrameLayout> mPublisherViewContainers = sharedState.getPublisherViewContainers();
-                ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-                FrameLayout mPublisherViewContainer = mPublisherViewContainers.get(publisherId);
-                Publisher mPublisher = mPublishers.get(publisherId);
                 Session mSession = null;
-                mPublisherDestroyedCallbacks.put(publisherId, callback);
+
+                // If valid session and publisher, get the session and remove the publisher
+                ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
+                Publisher mPublisher = mPublishers.get(publisherId);
                 if (mPublisher != null && mPublisher.getSession() != null && mPublisher.getSession().getSessionId() != null) {
+                    ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
                     mSession = mSessions.get(mPublisher.getSession().getSessionId());
                 }
+                mPublishers.remove(publisherId);
 
+                // If there is a publisher view container, remove all its views
+                ConcurrentHashMap<String, FrameLayout> mPublisherViewContainers = sharedState.getPublisherViewContainers();
+                FrameLayout mPublisherViewContainer = mPublisherViewContainers.get(publisherId);
                 if (mPublisherViewContainer != null) {
                     mPublisherViewContainer.removeAllViews();
                 }
                 mPublisherViewContainers.remove(publisherId);
+
+                // Unpublish the publisher from the session
                 if (mSession != null && mPublisher != null) {
                     mSession.unpublish(mPublisher);
                 }
+
+                // Stop publisher capturing
                 if (mPublisher != null) {
                     mPublisher.getCapturer().stopCapture();
                 }
-                mPublishers.remove(publisherId);
+
+                // Add to the publisher destroyed callbacks
+                ConcurrentHashMap<String, Callback> mPublisherDestroyedCallbacks = sharedState.getPublisherDestroyedCallbacks();
+                mPublisherDestroyedCallbacks.put(publisherId, callback);
             }
         });
     }
 
+    /**
+     * Get sessionId and connectionStatus using the sessionId
+     * 
+     * @param sessionId
+     * @param callback
+     */
     @ReactMethod
     public void getSessionInfo(String sessionId, Callback callback) {
         ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
@@ -469,17 +554,25 @@ public class OTSessionManager extends ReactContextBaseJavaModule
         callback.invoke(sessionInfo);
     }
 
+    /**
+     * 
+     * @param logLevel
+     */
     @ReactMethod
     public void enableLogs(Boolean logLevel) {
         setLogLevel(logLevel);
     }
 
+    /**
+     * 
+     * @param logLevel
+     */
     private void setLogLevel(Boolean logLevel) {
         this.logLevel = logLevel;
     }
 
     private void sendEventMap(ReactContext reactContext, String eventName, @Nullable WritableMap eventData) {
-
+        // TODO
         if (Utils.contains(jsEvents, eventName) || Utils.contains(componentEvents, eventName)) {
             reactContext
                     .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
