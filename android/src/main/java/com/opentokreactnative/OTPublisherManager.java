@@ -1,6 +1,5 @@
 package com.opentokreactnative;
 
-
 import android.util.Log;
 import android.widget.FrameLayout;
 import android.support.annotation.Nullable;
@@ -116,7 +115,6 @@ public class OTPublisherManager extends ReactContextBaseJavaModule
     public void publishAudio(String publisherId, Boolean publishAudio) {
         ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
         Publisher mPublisher = mPublishers.get(publisherId);
-
         if (mPublisher != null) {
             mPublisher.setPublishAudio(publishAudio);
         }
@@ -126,7 +124,6 @@ public class OTPublisherManager extends ReactContextBaseJavaModule
     public void publishVideo(String publisherId, Boolean publishVideo) {
         ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
         Publisher mPublisher = mPublishers.get(publisherId);
-
         if (mPublisher != null) {
             mPublisher.setPublishVideo(publishVideo);
         }
@@ -181,12 +178,10 @@ public class OTPublisherManager extends ReactContextBaseJavaModule
         if (videoSource.equals("screen")) {
             View view = getCurrentActivity().getWindow().getDecorView().getRootView();
             OTScreenCapturer capturer = new OTScreenCapturer(view);
-
             mPublisher = PublisherBuilder.buildPublisher(reactContext, properties, capturer);
             mPublisher.setPublisherVideoType(PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeScreen);
         } else {
             mPublisher = PublisherBuilder.buildPublisher(reactContext, properties);
-
             String cameraPosition = properties.getString("cameraPosition");
             if (cameraPosition.equals("back")) {
                 mPublisher.cycleCamera();
@@ -209,5 +204,92 @@ public class OTPublisherManager extends ReactContextBaseJavaModule
         mPublishers.put(publisherId, mPublisher);
 
         callback.invoke();
+    }
+
+    @ReactMethod
+    public void publish(String sessionId, String publisherId, Callback callback) {
+        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+        Session mSession = mSessions.get(sessionId);
+
+        ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
+        Publisher mPublisher = mPublishers.get(publisherId);
+
+        // this.attemptPublishAndInvokeCallback(mSession, mPublisher, callback);
+        if (mSession == null) {
+            WritableMap errorInfo = EventUtils.createError("Error publishing. Could not find native session instance.");
+            callback.invoke(errorInfo);
+        } else if (mPublisher == null) {
+            WritableMap errorInfo = EventUtils.createError("Error publishing. Could not find native publisher instance.");
+            callback.invoke(errorInfo);
+        } else {
+            mSession.publish(mPublisher);
+            callback.invoke();
+        }
+    }
+
+    private Session getSession(String sessionId) {
+        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+        return mSessions.get(sessionId);
+    }
+
+    private Publisher getPublisher(String publisherId) {
+        ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
+        return mPublishers.get(publisherId);
+    }
+
+    private void attemptPublishAndInvokeCallback(Session session, Publisher publisher, Callback callback) {
+        if (session == null) {
+            WritableMap errorInfo = EventUtils.createError("Error publishing. Could not find native session instance.");
+            callback.invoke(errorInfo);
+        } else if (publisher == null) {
+            WritableMap errorInfo = EventUtils.createError("Error publishing. Could not find native publisher instance.");
+            callback.invoke(errorInfo);
+        } else {
+            session.publish(publisher);
+            callback.invoke();
+        }
+    }
+
+    @ReactMethod
+    public void destroy(final String publisherId, final Callback callback) {
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override 
+            public void run() {
+                Session mSession = null;
+
+                // If valid session and publisher, get the session and remove the publisher
+                ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
+                Publisher mPublisher = mPublishers.get(publisherId);
+                if (mPublisher != null && 
+                    mPublisher.getSession() != null && 
+                    mPublisher.getSession().getSessionId() != null) {
+                        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
+                        mSession = mSessions.get(mPublisher.getSession().getSessionId());
+                }
+                mPublishers.remove(publisherId);
+
+                // If there is a publisher view container, remove all its views
+                ConcurrentHashMap<String, FrameLayout> mPublisherViewContainers = sharedState.getPublisherViewContainers();
+                FrameLayout mPublisherViewContainer = mPublisherViewContainers.get(publisherId);
+                if (mPublisherViewContainer != null) {
+                    mPublisherViewContainer.removeAllViews();
+                }
+                mPublisherViewContainers.remove(publisherId);
+
+                // Unpublish the publisher from the session
+                if (mSession != null && mPublisher != null) {
+                    mSession.unpublish(mPublisher);
+                }
+
+                // Stop publishing capturing
+                if (mPublisher != null) {
+                    mPublisher.getCapturer().stopCapture();
+                }
+
+                // Add to the publisher destroyed callbacks
+                ConcurrentHashMap<String, Callback> mPublisherDestroyedCallbacks = sharedState.getPublisherDestroyedCallbacks();
+                mPublisherDestroyedCallbacks.put(publisherId, callback);
+            }
+        });
     }
 }

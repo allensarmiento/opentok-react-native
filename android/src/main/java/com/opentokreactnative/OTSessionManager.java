@@ -23,14 +23,12 @@ import com.facebook.react.bridge.ReadableArray;
 
 import com.opentok.android.Session;
 import com.opentok.android.Connection;
-import com.opentok.android.Publisher;
 import com.opentok.android.Stream;
 import com.opentok.android.OpentokError;
 import com.opentok.android.Subscriber;
 import com.opentok.android.SubscriberKit;
 
 import com.opentokreactnative.builders.SessionBuilder;
-import com.opentokreactnative.builders.PublisherBuilder;
 import com.opentokreactnative.utils.EventUtils;
 import com.opentokreactnative.utils.Utils;
 
@@ -122,39 +120,6 @@ public class OTSessionManager extends ReactContextBaseJavaModule
             mSession.connect(token);
         } else {
             WritableMap errorInfo = EventUtils.createError("Error connecting to session. Could not find native session instance");
-            callback.invoke(errorInfo);
-        }
-    }
-
-    /**
-     * Attempt to publish to the session.
-     * 
-     * @param sessionId
-     * @param publisherId
-     * @param callback
-     */
-    @ReactMethod
-    public void publish(String sessionId, String publisherId, Callback callback) {
-        // Get the session using the sessionId
-        ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-        Session mSession = mSessions.get(sessionId);
-
-        // Attempt to publish to the session
-        if (mSession != null) {
-            // Get the publisher from using the publisherId
-            ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
-            Publisher mPublisher = mPublishers.get(publisherId);
-
-            // Attempt to publish to the session
-            if (mPublisher != null) {
-                mSession.publish(mPublisher);
-                callback.invoke();
-            } else {
-                WritableMap errorInfo = EventUtils.createError("Error publishing. Could not find native publisher instance.");
-                callback.invoke(errorInfo);
-            }
-        } else {
-            WritableMap errorInfo = EventUtils.createError("Error publishing. Could not find native session instance.");
             callback.invoke(errorInfo);
         }
     }
@@ -266,38 +231,6 @@ public class OTSessionManager extends ReactContextBaseJavaModule
     }
 
     /**
-     * Publishes the audio for a publisher
-     * 
-     * @param publisherId
-     * @param publishAudio
-     */
-    @ReactMethod
-    public void publishAudio(String publisherId, Boolean publishAudio) {
-        ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
-        Publisher mPublisher = mPublishers.get(publisherId);
-
-        if (mPublisher != null) {
-            mPublisher.setPublishAudio(publishAudio);
-        }
-    }
-
-    /**
-     * Publishes the video for a publisher
-     * 
-     * @param publisherId
-     * @param publishVideo
-     */
-    @ReactMethod
-    public void publishVideo(String publisherId, Boolean publishVideo) {
-        ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
-        Publisher mPublisher = mPublishers.get(publisherId);
-
-        if (mPublisher != null) {
-            mPublisher.setPublishVideo(publishVideo);
-        }
-    }
-
-    /**
      * Subscribes to the audio for a stream
      * 
      * @param streamId
@@ -326,22 +259,6 @@ public class OTSessionManager extends ReactContextBaseJavaModule
 
         if (mSubscriber != null) {
             mSubscriber.setSubscribeToVideo(subscribeToVideo);
-        }
-    }
-
-    /**
-     * Change the camera view for a publisher
-     * 
-     * @param publisherId
-     * @param cameraPosition
-     */
-    @ReactMethod
-    public void changeCameraPosition(String publisherId, String cameraPosition) {
-        ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
-        Publisher mPublisher = mPublishers.get(publisherId);
-
-        if (mPublisher != null) {
-            mPublisher.cycleCamera();
         }
     }
 
@@ -413,53 +330,6 @@ public class OTSessionManager extends ReactContextBaseJavaModule
             WritableMap errorInfo = EventUtils.createError("There was an error sending the signal. The native session instance could not be found.");
             callback.invoke(errorInfo);
         }
-    }
-
-    /**
-     * Remove publisher properties from the session
-     * 
-     * @param publisherId
-     * @param callback
-     */
-    @ReactMethod
-    public void destroyPublisher(final String publisherId, final Callback callback) {
-        UiThreadUtil.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Session mSession = null;
-
-                // If valid session and publisher, get the session and remove the publisher
-                ConcurrentHashMap<String, Publisher> mPublishers = sharedState.getPublishers();
-                Publisher mPublisher = mPublishers.get(publisherId);
-                if (mPublisher != null && mPublisher.getSession() != null && mPublisher.getSession().getSessionId() != null) {
-                    ConcurrentHashMap<String, Session> mSessions = sharedState.getSessions();
-                    mSession = mSessions.get(mPublisher.getSession().getSessionId());
-                }
-                mPublishers.remove(publisherId);
-
-                // If there is a publisher view container, remove all its views
-                ConcurrentHashMap<String, FrameLayout> mPublisherViewContainers = sharedState.getPublisherViewContainers();
-                FrameLayout mPublisherViewContainer = mPublisherViewContainers.get(publisherId);
-                if (mPublisherViewContainer != null) {
-                    mPublisherViewContainer.removeAllViews();
-                }
-                mPublisherViewContainers.remove(publisherId);
-
-                // Unpublish the publisher from the session
-                if (mSession != null && mPublisher != null) {
-                    mSession.unpublish(mPublisher);
-                }
-
-                // Stop publisher capturing
-                if (mPublisher != null) {
-                    mPublisher.getCapturer().stopCapture();
-                }
-
-                // Add to the publisher destroyed callbacks
-                ConcurrentHashMap<String, Callback> mPublisherDestroyedCallbacks = sharedState.getPublisherDestroyedCallbacks();
-                mPublisherDestroyedCallbacks.put(publisherId, callback);
-            }
-        });
     }
 
     /**

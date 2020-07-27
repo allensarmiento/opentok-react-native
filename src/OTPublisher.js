@@ -53,10 +53,8 @@ class OTPublisher extends Component {
         console.log(this.state.publisherId);
         console.log(value);
         if (key === 'cameraPosition') {
-          OT.session.changeCameraPosition(this.state.publisherId, value);
           OT.publisher.changeCameraPosition(this.state.publisherId, value);
         } else {
-          OT.session[key](this.state.publisherId, value);          
           OT.publisher[key](this.state.publisherId, value);          
         }
       }
@@ -67,7 +65,7 @@ class OTPublisher extends Component {
     updatePublisherProperty('cameraPosition', 'front');
   }
   componentWillUnmount() {
-    OT.session.destroyPublisher(this.state.publisherId, (error) => {
+    OT.publisher.destroy(this.state.publisherId, (error) => {
       if (error) {
         this.otrnEventHandler(error);
       } else {
@@ -106,23 +104,27 @@ class OTPublisher extends Component {
         console.log('Error initializing publisher: ' + initError);
       } else {
         if (this.context.sessionId) {
+          // TODO: This method might need to be in the publisher
           OT.session.getSessionInfo(this.context.sessionId, (session) => {
             if (!isNull(session) && isNull(this.state.publisher) && isConnected(session.connectionStatus)) {
               console.log('Calling publish method');
               this.publish();
             } else {
               console.log('Error, not calling publish method');
-              console.log('Session: ' + session);
-              console.log('State publisher: ' + this.state.publisher);
+              console.log('Session: ' + JSON.stringify(session));
+              console.log('State publisher: ' + JSON.stringify(this.state.publisher));
               console.log('Connected: ' + session.connectionStatus);
             }
           });
+        } else {
+          console.log('There is no context session id');
         }
       }
     });
   }
   publish() {
-    OT.session.publish(this.context.sessionId, this.state.publisherId, (publishError) => {
+    // TODO: Maybe call OT.publisher.publish instead
+    OT.publisher.publish(this.context.sessionId, this.state.publisherId, (publishError) => {
       if (publishError) {
         this.otrnEventHandler(publishError);
         console.log('Error publishing publisher: ' + publishError);
