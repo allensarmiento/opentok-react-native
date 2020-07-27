@@ -25,7 +25,7 @@ public class OTPackage implements ReactPackage {
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
         modules.add(new OTSessionManager(reactContext));
-
+        modules.add(new OTPublisherManager(reactContext));
         return modules;
     }
 }

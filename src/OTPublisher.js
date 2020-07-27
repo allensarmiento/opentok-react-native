@@ -29,10 +29,11 @@ class OTPublisher extends Component {
     this.otrnEventHandler = getOtrnErrorEventHandler(this.props.eventHandlers); 
     this.publisherEvents = sanitizePublisherEvents(this.state.publisherId, this.props.eventHandlers);
     setNativeEvents(this.publisherEvents);
-    OT.setJSComponentEvents(this.componentEventsArray);
+    OT.session.setJSComponentEvents(this.componentEventsArray);
     if (this.context.sessionId) {
       this.sessionConnected = nativeEvents.addListener(`${this.context.sessionId}:${this.componentEvents.sessionConnected}`, () => this.sessionConnectedHandler());
     }
+    console.log('Publisher component initialized');
   }
   componentDidMount() {
     this.createPublisher();
@@ -48,10 +49,15 @@ class OTPublisher extends Component {
     const updatePublisherProperty = (key, defaultValue) => {
       if (shouldUpdate(key, defaultValue)) {
         const value = useDefault(this.props.properties[key], defaultValue);
+        console.log(key);
+        console.log(this.state.publisherId);
+        console.log(value);
         if (key === 'cameraPosition') {
-          OT.changeCameraPosition(this.state.publisherId, value);
+          OT.session.changeCameraPosition(this.state.publisherId, value);
+          OT.publisher.changeCameraPosition(this.state.publisherId, value);
         } else {
-          OT[key](this.state.publisherId, value);          
+          OT.session[key](this.state.publisherId, value);          
+          OT.publisher[key](this.state.publisherId, value);          
         }
       }
     };
@@ -61,12 +67,12 @@ class OTPublisher extends Component {
     updatePublisherProperty('cameraPosition', 'front');
   }
   componentWillUnmount() {
-    OT.destroyPublisher(this.state.publisherId, (error) => {
+    OT.session.destroyPublisher(this.state.publisherId, (error) => {
       if (error) {
         this.otrnEventHandler(error);
       } else {
         this.sessionConnected.remove();
-        OT.removeJSComponentEvents(this.componentEventsArray);
+        OT.session.removeJSComponentEvents(this.componentEventsArray);
         removeNativeEvents(this.publisherEvents);
       }
     });
@@ -81,9 +87,11 @@ class OTPublisher extends Component {
       checkAndroidPermissions()
         .then(() => {
           this.initPublisher();
+          console.log('Publisher created')
         })
         .catch((error) => {
           this.otrnEventHandler(error);
+          console.log('Error creating publisher: ' + error);
         });
     } else {
       this.initPublisher();
@@ -91,17 +99,22 @@ class OTPublisher extends Component {
   }
   initPublisher() {
     const publisherProperties = sanitizeProperties(this.props.properties);
-    OT.initPublisher(this.state.publisherId, publisherProperties, (initError) => {
+    OT.publisher.init(this.state.publisherId, publisherProperties, (initError) => {
       if (initError) {
-        this.setState({
-          initError
-        });
+        this.setState({ initError });
         this.otrnEventHandler(initError);
+        console.log('Error initializing publisher: ' + initError);
       } else {
         if (this.context.sessionId) {
-          OT.getSessionInfo(this.context.sessionId, (session) => {
+          OT.session.getSessionInfo(this.context.sessionId, (session) => {
             if (!isNull(session) && isNull(this.state.publisher) && isConnected(session.connectionStatus)) {
-             this.publish();
+              console.log('Calling publish method');
+              this.publish();
+            } else {
+              console.log('Error, not calling publish method');
+              console.log('Session: ' + session);
+              console.log('State publisher: ' + this.state.publisher);
+              console.log('Connected: ' + session.connectionStatus);
             }
           });
         }
@@ -109,13 +122,13 @@ class OTPublisher extends Component {
     });
   }
   publish() {
-    OT.publish(this.context.sessionId, this.state.publisherId, (publishError) => {
+    OT.session.publish(this.context.sessionId, this.state.publisherId, (publishError) => {
       if (publishError) {
         this.otrnEventHandler(publishError);
+        console.log('Error publishing publisher: ' + publishError);
       } else {
-        this.setState({
-          publisher: true,
-        });
+        console.log('Publish successful');
+        this.setState({ publisher: true });
       }
     });
   }
@@ -123,8 +136,10 @@ class OTPublisher extends Component {
     const { publisher, publisherId } = this.state;
     const { sessionId } = this.context;
     if (publisher && publisherId) {
+      console.log('Rendering the publisher');
       return <OTPublisherView publisherId={publisherId} sessionId={sessionId} {...this.props} />;
     }
+    console.log('No publisher found to render');
     return <View />;
   }
 }

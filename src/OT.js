@@ -1,7 +1,10 @@
 import { NativeModules, NativeEventEmitter, PermissionsAndroid } from 'react-native';
 import { each } from 'underscore';
 
-const OT = NativeModules.OTSessionManager;
+const OT = {
+  session: NativeModules.OTSessionManager,
+  publisher: NativeModules.OTPublisherManager
+};
 const nativeEvents = new NativeEventEmitter(OT);
 
 const checkAndroidPermissions = () => new Promise((resolve, reject) => {
@@ -30,7 +33,7 @@ const checkAndroidPermissions = () => new Promise((resolve, reject) => {
 
 const setNativeEvents = (events) => {
   const eventNames = Object.keys(events);
-  OT.setNativeEvents(eventNames);
+  OT.session.setNativeEvents(eventNames);
   each(events, (eventHandler, eventType) => {
     const allEvents = nativeEvents.listeners();
     if (!allEvents.includes(eventType)) {
@@ -41,7 +44,7 @@ const setNativeEvents = (events) => {
 
 const removeNativeEvents = (events) => {
   const eventNames = Object.keys(events);
-  OT.removeNativeEvents(eventNames);
+  OT.session.removeNativeEvents(eventNames);
   each(events, (eventHandler, eventType) => {
     nativeEvents.removeListener(eventType, eventHandler);
   });

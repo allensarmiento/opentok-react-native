@@ -9,6 +9,7 @@ import com.opentok.android.Stream;
 import com.opentok.android.Subscriber;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
 
 import com.facebook.react.bridge.Callback;
 /**
@@ -32,71 +33,69 @@ public class OTRN {
     private ConcurrentHashMap<String, Callback> sessionDisconnectCallbacks = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Connection> connections = new ConcurrentHashMap<>();
 
-    public static synchronized OTRN getSharedState() {
+    private ArrayList<String> jsEvents = new ArrayList<String>();
+    private ArrayList<String> componentEvents = new ArrayList<String>();
 
+    public static synchronized OTRN getSharedState() {
         if (sharedState == null) {
             sharedState = new OTRN();
         }
         return sharedState;
     }
 
-    public ConcurrentHashMap<String, String> getAndroidOnTopMap() {
+    public ArrayList<String> getJsEvents() {
+        return this.jsEvents;
+    }
 
+    public ArrayList<String> getComponentEvents() {
+        return this.componentEvents;
+    }
+
+    public ConcurrentHashMap<String, String> getAndroidOnTopMap() {
         return this.androidOnTopMap;
     }
 
     public ConcurrentHashMap<String, String> getAndroidZOrderMap() {
-
         return this.androidZOrderMap;
     }
 
     public ConcurrentHashMap<String, Stream> getSubscriberStreams() {
-
         return this.subscriberStreams;
     }
 
     public ConcurrentHashMap<String, Subscriber> getSubscribers() {
-
         return this.subscribers;
     }
 
     public ConcurrentHashMap<String, FrameLayout> getSubscriberViewContainers() {
-
         return this.subscriberViewContainers;
     }
 
     public ConcurrentHashMap<String, Publisher> getPublishers() {
-
         return this.publishers;
     }
 
     public ConcurrentHashMap<String, FrameLayout> getPublisherViewContainers() {
-
         return this.publisherViewContainers;
     }
 
     public ConcurrentHashMap<String, Callback> getPublisherDestroyedCallbacks() {
-
         return this.publisherDestroyedCallbacks;
     }
 
     public ConcurrentHashMap<String, Callback> getSessionConnectCallbacks() {
-
         return this.sessionConnectCallbacks;
     }
 
     public ConcurrentHashMap<String, Callback> getSessionDisconnectCallbacks() {
-
         return this.sessionDisconnectCallbacks;
     }
 
     public ConcurrentHashMap<String, Connection> getConnections() {
-
         return this.connections;
     }
 
     public ConcurrentHashMap<String, Session> getSessions() {
-
         return this.sessions;
     }
 

@@ -32,7 +32,7 @@ export default class OTSubscriber extends Component {
       this.streamDestroyed = nativeEvents.addListener(`${sessionId}:${this.componentEvents.streamDestroyed}`,
         stream => this.streamDestroyedHandler(stream));
       const subscriberEvents = sanitizeSubscriberEvents(eventHandlers);
-      OT.setJSComponentEvents(this.componentEventsArray);
+      OT.session.setJSComponentEvents(this.componentEventsArray);
       setNativeEvents(subscriberEvents);
     }
   }
@@ -41,8 +41,8 @@ export default class OTSubscriber extends Component {
     if (!isEqual(this.state.streamProperties, streamProperties)) {
       each(streamProperties, (individualStreamProperties, streamId) => {
         const { subscribeToAudio, subscribeToVideo } = individualStreamProperties;
-        OT.subscribeToAudio(streamId, subscribeToAudio);
-        OT.subscribeToVideo(streamId, subscribeToVideo);
+        OT.session.subscribeToAudio(streamId, subscribeToAudio);
+        OT.session.subscribeToVideo(streamId, subscribeToVideo);
       });
       this.setState({ streamProperties });
     }
@@ -50,7 +50,7 @@ export default class OTSubscriber extends Component {
   componentWillUnmount() {
     this.streamCreated.remove();
     this.streamDestroyed.remove();
-    OT.removeJSComponentEvents(this.componentEventsArray);
+    OT.session.removeJSComponentEvents(this.componentEventsArray);
     const events = sanitizeSubscriberEvents(this.props.eventHandlers);
     removeNativeEvents(events);
   }
@@ -63,7 +63,7 @@ export default class OTSubscriber extends Component {
     // Subscribe to streams. If subscribeToSelf is true, subscribe also to his own stream
     const sessionInfoConnectionId = sessionInfo && sessionInfo.connection ? sessionInfo.connection.connectionId : null;
     if (subscribeToSelf || (sessionInfoConnectionId !== stream.connectionId)){
-      OT.subscribeToStream(stream.streamId, sessionId, subscriberProperties, (error) => {
+      OT.session.subscribeToStream(stream.streamId, sessionId, subscriberProperties, (error) => {
         if (error) {
           this.otrnEventHandler(error);
         } else {
@@ -75,7 +75,7 @@ export default class OTSubscriber extends Component {
     }
   }
   streamDestroyedHandler = (stream) => {
-    OT.removeSubscriber(stream.streamId, (error) => {
+    OT.session.removeSubscriber(stream.streamId, (error) => {
       if (error) {
         this.otrnEventHandler(error);
       } else {
