@@ -65,7 +65,7 @@ class OTPublisher extends Component {
     updatePublisherProperty('cameraPosition', 'front');
   }
   componentWillUnmount() {
-    OT.publisher.destroy(this.state.publisherId, (error) => {
+    OT.session.destroyPublisher(this.state.publisherId, (error) => {
       if (error) {
         this.otrnEventHandler(error);
       } else {
@@ -97,7 +97,7 @@ class OTPublisher extends Component {
   }
   initPublisher() {
     const publisherProperties = sanitizeProperties(this.props.properties);
-    OT.publisher.init(this.state.publisherId, publisherProperties, (initError) => {
+    OT.session.initPublisher(this.state.publisherId, publisherProperties, (initError) => {
       if (initError) {
         this.setState({ initError });
         this.otrnEventHandler(initError);
@@ -107,6 +107,7 @@ class OTPublisher extends Component {
           // TODO: This method might need to be in the publisher
           OT.session.getSessionInfo(this.context.sessionId, (session) => {
             if (!isNull(session) && isNull(this.state.publisher) && isConnected(session.connectionStatus)) {
+              // ! This does not get called, this.publish() is called in the sessionConnectedHandler
               console.log('Calling publish method');
               this.publish();
             } else {
@@ -123,8 +124,7 @@ class OTPublisher extends Component {
     });
   }
   publish() {
-    // TODO: Maybe call OT.publisher.publish instead
-    OT.publisher.publish(this.context.sessionId, this.state.publisherId, (publishError) => {
+    OT.session.publish(this.context.sessionId, this.state.publisherId, (publishError) => {
       if (publishError) {
         this.otrnEventHandler(publishError);
         console.log('Error publishing publisher: ' + publishError);

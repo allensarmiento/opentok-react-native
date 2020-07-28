@@ -33,22 +33,11 @@ public class OTRN {
     private ConcurrentHashMap<String, Callback> sessionDisconnectCallbacks = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Connection> connections = new ConcurrentHashMap<>();
 
-    private ArrayList<String> jsEvents = new ArrayList<String>();
-    private ArrayList<String> componentEvents = new ArrayList<String>();
-
     public static synchronized OTRN getSharedState() {
         if (sharedState == null) {
             sharedState = new OTRN();
         }
         return sharedState;
-    }
-
-    public ArrayList<String> getJsEvents() {
-        return this.jsEvents;
-    }
-
-    public ArrayList<String> getComponentEvents() {
-        return this.componentEvents;
     }
 
     public ConcurrentHashMap<String, String> getAndroidOnTopMap() {
